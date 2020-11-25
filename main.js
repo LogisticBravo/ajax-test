@@ -1,50 +1,66 @@
-const baseURL = "https://ci-swapi.herokuapp.com/api/"
+//const baseURL = "https://ci-swapi.herokuapp.com/api/"
 
-function getData(type, cb){
-    var xhr = new XMLHttpRequest(); //creates new instance of XML request object
+function getData(url, cb) {
+    var xhr = new XMLHttpRequest();
 
-    xhr.open("GET", baseURL + type + "/"); //xhr open method: GET requests data (retrieve) from this URL
-    xhr.send(); // Sends the request
-
-    xhr.onreadystatechange = function () {
+    xhr.onreadystatechange = function() {
         if (this.readyState == 4 && this.status == 200) {
             cb(JSON.parse(this.responseText));
         }
     };
+
+    xhr.open("GET", url);
+    xhr.send();
 }
-function getTableHeaders(obj){
+
+function getTableHeaders(obj) {
     var tableHeaders = [];
 
-    Object.keys(obj).forEach(function(key){
+    Object.keys(obj).forEach(function(key) {
         tableHeaders.push(`<td>${key}</td>`);
     });
+
     return `<tr>${tableHeaders}</tr>`;
 }
 
-function writeToDocument(type){
+function generatePaginationButtons(next, prev) {
+    if (next && prev) {
+        return `<button onclick="writeToDocument('${prev}')">Previous</button>
+                <button onclick="writeToDocument('${next}')">Next</button>`;
+    } else if (next && !prev) {
+        return `<button onclick="writeToDocument('${next}')">Next</button>`;
+    } else if (!next && prev) {
+        return `<button onclick="writeToDocument('${prev}')">Previous</button>`;
+    }
+}
+
+function writeToDocument(url) {
     var tableRows = [];
-    var el = document.getElementById('data');
-    el.innerHTML = " ";
-    getData(type,function(data){
+    var el = document.getElementById("data");
+
+    getData(url, function(data) {
+        var pagination = "";
+
+        if (data.next || data.previous) {
+            pagination = generatePaginationButtons(data.next, data.previous);
+        }
         data = data.results;
         var tableHeaders = getTableHeaders(data[0]);
-        data.forEach(function(item){
+
+        data.forEach(function(item) {
             var dataRow = [];
 
-            Object.keys(item).forEach(function(key){
+            Object.keys(item).forEach(function(key) {
                 var rowData = item[key].toString();
-                var truncatedData = rowData.substring(0,15)
+                var truncatedData = rowData.substring(0, 15);
                 dataRow.push(`<td>${truncatedData}</td>`);
             });
             tableRows.push(`<tr>${dataRow}</tr>`);
-            });
-    el.innerHTML = `<table>${tableHeaders}${tableRows}</table>`;
+        });
+
+        el.innerHTML = `<table>${tableHeaders}${tableRows}</table>${pagination}`;
     });
 }
-
-
-
-
 
 //console.dir(data); console.dir(data) - shows us the directory of 'data' which led us to 'results'
 //by placing the entire code in a function called getData(cb) which is a newly created 'callback' function.
